@@ -1,0 +1,5 @@
+<launch>  
+  <!-- Start the actual detection server -->
+  <node name="laser_modul_server" pkg="laser_modul" type="LaserModulServer.py" respawn="false" output="screen">
+  </node>
+</launch>
