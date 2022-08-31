@@ -1,45 +1,33 @@
-import serial
-from time import sleep
 import rospy
 import actionlib
 from bark_msgs.msg import LaserModulAction
+from time import sleep
+import RPi.GPIO as GPIO
 
 class LaserModul:
-
     def __init__(self):
-        self.on = False
-        self.angle = 0
-        self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+        # pin 3 => BCM 2
+        self.GPIO_name = 2
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(self.GPIO_name,GPIO.OUT)
+        GPIO.output(self.GPIO_name,1)
+
         self.server = actionlib.SimpleActionServer('laser_modul', LaserModulAction, self.execute, False)
         self.server.start()
-        sleep(5)
+        sleep(0.5)
+
+    def on(self):
+        GPIO.output(self.GPIO_name,0)
+
+    def off(self):
+        GPIO.output(self.GPIO_name,1)
 
     def execute(self, goal):
-        # modul is already on, do the thing
-        if goal.on and self.on:
-            msg = 'MA:0,' + str(goal.angle) + ' /n'
-            self.ser.write(msg.encode('utf-8'))
-            self.angle = goal.angle
-            sleep(2)
-        
-        # turn off the modul
-        if ~goal.on and self.on:
-            msg = 'LA:0'+ ' /n'
-            self.ser.write(msg.encode('utf-8'))
-            self.on = False
-            sleep(2)
-        
-        # turn on and rotate
-        if goal.on and ~self.on:
-            msg = 'LA:1'+ ' /n'
-            self.ser.write(msg.encode('utf-8'))
-            self.on = True
-            sleep(3)
-
-            msg = 'MA:0,' + str(goal.angle) + ' /n'
-            self.ser.write(msg.encode('utf-8'))
-            self.angle = goal.angle
-            sleep(2)
+        if goal.on:
+            self.on()
+        else:
+            self.off()
 
         # empty respons
         self.server.set_succeeded()
